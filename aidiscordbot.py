@@ -7,13 +7,13 @@ import discord
 import logging
 from discord.ext import commands
 
-# Set up the logging system. Uncomment if you need additional logging for troubleshooting
+# Set up the logging system
 #logging.basicConfig(filename='bot.log', level=logging.DEBUG,
 #                    format='%(asctime)s:%(levelname)s:%(message)s')
 logging.basicConfig(filename='bot.log', level=logging.INFO,
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
-# Set up OpenAI API key. Create an openai account to use this. The free option is good for smaller Discord Groups
+# Set up OpenAI API key
 try:
     openai.api_key = "openai api key here"
 except openai.OpenAIError as e:
@@ -30,11 +30,11 @@ question_queue = []
 # Dictionary to store user IDs and the time they last asked a question
 rate_limit_dict = {}
 
-# Load the list of bad words from the file. Good to filter questions that maybe considered offensive
+# Load the list of bad words from the file
 with open("badwords.txt") as f:
     bad_words = f.read().splitlines()
 
-# Event handler for when a user sends a message. Logs the question to the log file to help troubleshoot or see if a user was abusing the bot
+# Event handler for when a user sends a message
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -44,23 +44,32 @@ async def on_message(message):
 
     if message.content.startswith("/chat"):
         question = message.content[5:].strip()
+        
+        # Check for bad words
+        for word in bad_words:
+            if word in question.lower():
+                await message.channel.send(f"{message.author.mention}, I cannot respond to questions like that.")
+                return
+        
+        # Perform input validation to prevent XSS, SQL injection, and directory traversal
         question = re.sub(r'[^\w\s]', '', question)
 
         # Log the user's question to the log file
         logging.info(f"{message.author.name}: {question}")
         
-#This line rate limits the questions so that a user cannot ask the bot several questions in a row        
         if user_id not in rate_limit_dict:
             rate_limit_dict[user_id] = time.time()
         else:
             time_since_last_question = time.time() - rate_limit_dict[user_id]
-            if time_since_last_question < 5:
+            if time_since_last_question < 3:
                 await message.channel.send(f"{message.author.mention}, you are asking too fast! Please slow down.")
                 return
 
         question_queue.append((message.channel, question, message))
         rate_limit_dict[user_id] = time.time()
         print(f"{message.author.name}: {question}")
+
+
 
 # Coroutine to handle sending the response to the user
 async def send_message(channel, response, message):
