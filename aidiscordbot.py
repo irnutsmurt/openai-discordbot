@@ -44,15 +44,19 @@ async def on_message(message):
 
     if message.content.startswith("/chat"):
         question = message.content[5:].strip()
-        
+
+        # Remove all non-alphanumeric characters and white space
+        question = re.sub(r'[^\w\s]', '', question)
+
         # Check for bad words
         for word in bad_words:
-            if word in question.lower():
-                await message.channel.send(f"{message.author.mention}, I cannot respond to questions like that.")
+            if word in question:
+                await message.channel.send(f"{message.author.mention}, your question contains inappropriate language and cannot be answered.")
                 return
-        
-        # Perform input validation to prevent XSS, SQL injection, and directory traversal
-        question = re.sub(r'[^\w\s]', '', question)
+
+        # Validate the input to protect against SQL injection
+        question = re.sub(r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))", "", question)
+        question = re.sub(r";|`|'|\"", "", question)
 
         # Log the user's question to the log file
         logging.info(f"{message.author.name}: {question}")
@@ -61,19 +65,24 @@ async def on_message(message):
             rate_limit_dict[user_id] = time.time()
         else:
             time_since_last_question = time.time() - rate_limit_dict[user_id]
-            if time_since_last_question < 3:
+            if time_since_last_question < 15:
                 await message.channel.send(f"{message.author.mention}, you are asking too fast! Please slow down.")
                 return
 
         question_queue.append((message.channel, question, message))
         rate_limit_dict[user_id] = time.time()
-        print(f"{message.author.name}: {question}")
 
 
 
 # Coroutine to handle sending the response to the user
 async def send_message(channel, response, message):
-    await channel.send(f"{message.author.mention}, {response}")
+    if len(response) > 2000:
+        await channel.send(f"{message.author.mention}, Your message was too long to send in the channel, so I sent it to you in a Direct Message.")
+        chunks = [response[i:i + 2000] for i in range(0, len(response), 2000)]
+        for chunk in chunks:
+            await message.author.send(chunk)
+    else:
+        await channel.send(f"{message.author.mention}, {response}")
 
 # ...
 
