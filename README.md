@@ -27,7 +27,7 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 
 11. Copy the token, and paste into the aidiscord.py file where it says "discord token here"
 
-12. Select the intents you need, generally it should only be SERVER MEMBERS INTENT and MESSAGE CONTENT INTENT
+12. Select the intents you need, generally it should only be SERVER MEMBERS INTENT, and MESSAGE CONTENT INTENT,
 
 13. Save Changes
 
@@ -36,10 +36,15 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 15. Select the Scopes. Will only need BOT
 
 16. Select the Text Permissions that are required. These should be only
+
 *Send Messages*
+
 *Send Messages in Threads*
+
 *Embed Links*
+
 *Attach Files*
+
 *Read Message History*
 
 17. Copy the Generated URL, and paste into the URL bar of the browser and authorize the bot.
