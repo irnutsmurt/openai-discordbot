@@ -1,0 +1,11 @@
+[Unit]
+Description=Aidiscordbot Service
+
+[Service]
+User=aidiscordbot
+Group=aidiscordbot
+ExecStart=/usr/bin/python3 /path/to/aidiscordbot.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
