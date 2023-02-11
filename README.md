@@ -15,7 +15,7 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 
 5. Select "Create New Api Key" and copy it
 
-6. Paste the key into the aidiscord.py file where it says "openai api key here"
+6. Paste the key into the config.ini file where it says "YOUR_OPENAI_API_KEY_HERE"
 
 7. Create a discord api token by going to https://discord.com/developers/applications/
 
@@ -25,7 +25,7 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 
 10. Press the "Add Bot" button, and press the "Yes, do it" button
 
-11. Copy the token, and paste into the aidiscord.py file where it says "discord token here"
+11. Copy the token, and paste into the config.ini file where it says "OUR_DISCORD_TOKEN_HERE"
 
 12. Select the intents you need, generally it should only be SERVER MEMBERS INTENT, and MESSAGE CONTENT INTENT,
 
@@ -67,8 +67,7 @@ Followed by their question. This is an example of what it will look like.
 /chat tell me the weather of the bermuda triangle
 ```
 
-## Creating a daemon service ##
-If you'd like to run the program in the background I suggest creating a systemd service
+## Creating a service account ##
 1. Create a new user:
 ```
 sudo useradd -r aidiscordbot
@@ -86,13 +85,29 @@ sudo usermod -d /var/empty aidiscordbot
 sudo usermod -s /sbin/nologin aidiscordbot
 ```
 
-4. Create the systemd service file: 
+## Securing the Config.ini File ##
+1. Place the config.ini in the same directory as the python script
+
+2. Change the readwrite permission to read only from the owner
+```
+chmod 600 /path/to/config.ini
+```
+
+3. Change the owner to whomever will be running the script. 
+```
+chown aidiscordbot:aidiscordbot /path/to/config.ini
+```
+
+## Creating a Daemon Service ##
+If you'd like to run the program in the background I suggest creating a systemd service. Alternativel the screen command can also be used
+
+1. Create the systemd service file: 
 
 ```
 sudo nano /etc/systemd/system/aidiscordbot.service
 ```
 
-5. Add the following content to the service file:
+2. Add the following content to the service file:
 
 
 ```    [Unit]
@@ -109,7 +124,7 @@ sudo nano /etc/systemd/system/aidiscordbot.service
 ```
 Note: Replace /path/to/aidiscordbot.py with the actual path to the aidiscordbot.py script on your system.
 
-6. Make sure the aidiscordbot.py script has the correct permissions:
+3. Make sure the aidiscordbot.py script has the correct permissions:
 
 ```
     sudo chown aidiscordbot:aidiscordbot /path/to/aidiscordbot.py
@@ -117,18 +132,18 @@ Note: Replace /path/to/aidiscordbot.py with the actual path to the aidiscordbot.
     sudo chmod 700 /path/to/aidiscordbot.py 
 ```
 
-7. Reload the systemd configuration:
+4. Reload the systemd configuration:
 
 ```
 sudo systemctl daemon-reload
 ```
 
-8. Start the service:
+5. Start the service:
 ```
 sudo systemctl start aidiscordbot.service
 ```
 
-9. Enable the service to start automatically at boot:
+6. Enable the service to start automatically at boot:
 ```
 sudo systemctl enable aidiscordbot.service
 ```
