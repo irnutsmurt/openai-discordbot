@@ -6,6 +6,17 @@ import openai
 import discord
 import logging
 from discord.ext import commands
+import configparser
+
+# Load the config file
+config = configparser.ConfigParser()
+config.read("config.ini")
+
+# Set up OpenAI API key
+try:
+    openai.api_key = config["OpenAI"]["api_key"]
+except openai.OpenAIError as e:
+    raise Exception(f"Error setting OpenAI API key: {e}")
 
 # Set up the logging system
 #logging.basicConfig(filename='bot.log', level=logging.DEBUG,
@@ -14,10 +25,10 @@ logging.basicConfig(filename='bot.log', level=logging.INFO,
                     format='%(asctime)s:%(levelname)s:%(message)s')
 
 # Set up OpenAI API key
-try:
-    openai.api_key = "openai api key here"
-except openai.OpenAIError as e:
-    raise Exception(f"Error setting OpenAI API key: {e}")
+#try:
+#    openai.api_key = "openai api key here"
+#except openai.OpenAIError as e:
+#    raise Exception(f"Error setting OpenAI API key: {e}")
 
 # Create the bot instance
 intents = discord.Intents.all()
@@ -109,4 +120,4 @@ async def handle_question_queue():
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(handle_question_queue())
-    loop.run_until_complete(bot.start("discord token here"))
+    loop.run_until_complete(bot.start(config["Discord"]["token"]))
