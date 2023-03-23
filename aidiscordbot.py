@@ -35,10 +35,18 @@ question_queue = []
 # Dictionary to store user IDs and the time they last asked a question
 rate_limit_dict = {}
 
+# List to store the image requests in a queue
+image_queue = []
+
 # Load the list of bad words from the file
 with open("badwords.txt") as f:
     bad_words = f.read().splitlines()
 
+def sanitize_input(user_input):
+    sanitized_input = user_input.replace("../", "").replace("..\\", "")
+    return sanitized_input
+
+	
 # Coroutine to handle sending the response to the user
 async def send_message(channel, response, message):
     print("Sending message...")
@@ -59,6 +67,7 @@ async def on_message(message):
 
     if message.content.startswith("!chat"):
         question = message.content[5:].strip()
+        sanitized_question = sanitize_input(question)
 
         # Escape HTML characters
         question = html.escape(question)
@@ -79,28 +88,11 @@ async def on_message(message):
 
     elif message.content.startswith("!image"):
         prompt = message.content[6:].strip()
+        sanitized_prompt = sanitize_input(prompt)
+        
+        # Add the image request to the image_queue
+        image_queue.append((message.channel, message, sanitized_prompt))
 
-        # Escape HTML characters
-        prompt = html.escape(prompt)
-
-        image_url = await generate_image(prompt)
-
-        if image_url == "safety_system_error":
-            await message.channel.send(f"{message.author.mention}, your request was rejected as a result of our safety system. Your prompt may contain text that is not allowed by our safety system.")
-        elif image_url is not None:
-            # Download the image to a temporary file
-            with requests.get(image_url, stream=True) as r:
-                r.raise_for_status()
-                with open("temp_image.jpg", "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
-
-            # Upload the image to Discord
-            with open("temp_image.jpg", "rb") as f:
-                await message.channel.send(f"{message.author.mention}, here's the generated image:", file=discord.File(f))
-
-            # Remove the temporary file
-            os.remove("temp_image.jpg")
 
 async def generate_response(question):
     try:
@@ -192,9 +184,34 @@ async def handle_question_queue():
             except Exception as e:
                 logging.error(f"Error: {e}")
         await asyncio.sleep(0.1)
-          
+
+async def handle_image_queue():
+    while True:
+        if image_queue:
+            channel, message, prompt = image_queue.pop(0)
+
+            image_url = await generate_image(prompt)
+
+            # Download the image to a temporary file
+            with requests.get(image_url, stream=True) as r:
+                r.raise_for_status()
+                with open("temp_image.jpg", "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+            # Upload the image to Discord
+            with open("temp_image.jpg", "rb") as f:
+                await channel.send(f"{message.author.mention}, here's the generated image:", file=discord.File(f))
+            
+            # Remove the temporary file
+            os.remove("temp_image.jpg")
+
+        await asyncio.sleep(0.1)
+		
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.create_task(handle_question_queue())
+    loop.create_task(handle_image_queue())  # Add this line
     loop.run_until_complete(bot.start(config["Discord"]["token"]))
+
