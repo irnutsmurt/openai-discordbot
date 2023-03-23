@@ -192,22 +192,25 @@ async def handle_image_queue():
 
             image_url = await generate_image(prompt)
 
-            # Download the image to a temporary file
-            with requests.get(image_url, stream=True) as r:
-                r.raise_for_status()
-                with open("temp_image.jpg", "wb") as f:
-                    for chunk in r.iter_content(chunk_size=8192):
-                        f.write(chunk)
+            if image_url == "safety_system_error":
+                await channel.send(f"{message.author.mention}, your request was rejected as a result of our safety system.")
+            elif image_url is not None:
+                # Download the image to a temporary file
+                with requests.get(image_url, stream=True) as r:
+                    r.raise_for_status()
+                    with open("temp_image.jpg", "wb") as f:
+                        for chunk in r.iter_content(chunk_size=8192):
+                            f.write(chunk)
 
-            # Upload the image to Discord
-            with open("temp_image.jpg", "rb") as f:
-                await channel.send(f"{message.author.mention}, here's the generated image:", file=discord.File(f))
-            
-            # Remove the temporary file
-            os.remove("temp_image.jpg")
+                # Upload the image to Discord
+                with open("temp_image.jpg", "rb") as f:
+                    await channel.send(f"{message.author.mention}, here's the generated image:", file=discord.File(f))
+                
+                # Remove the temporary file
+                os.remove("temp_image.jpg")
 
         await asyncio.sleep(0.1)
-		
+
 
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
