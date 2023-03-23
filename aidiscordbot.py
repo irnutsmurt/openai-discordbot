@@ -1,3 +1,4 @@
+import html
 import asyncio
 import os
 import re
@@ -7,6 +8,8 @@ import discord
 import logging
 from discord.ext import commands
 import configparser
+import requests
+import json
 
 # Load the config file
 config = configparser.ConfigParser()
@@ -40,44 +43,13 @@ with open("badwords.txt") as f:
 async def send_message(channel, response, message):
     print("Sending message...")
     if len(response) > 2000:
-        await channel.send(f"{message.author.mention}, Your message was too long to send in the channel, so I sent it to you in a Direct Message.")
+        await channel.send(f"{message.author.mention}, My response is too long, sending in a Direct Message.")
         chunks = [response[i:i + 2000] for i in range(0, len(response), 2000)]
         for chunk in chunks:
             await message.author.send(chunk)
     else:
         await channel.send(f"{message.author.mention}, {response}")
 
-# Event handler for when a user sends a message
-@bot.event
-async def on_message(message):
-    if message.author == bot.user:
-        return
-
-    user_id = message.author.id
-
-    if message.content.startswith("!chat "):
-        question = message.content[5:].strip()
-
-        # Remove all non-alphanumeric characters and white space
-        question = re.sub(r'[^\w\s]', '', question)
-
-        # Check for bad words
-        for word in bad_words:
-            if word in question:
-                await message.channel.send(f"{message.author.mention}, your question contains inappropriate language and cannot be answered.")
-                return
-
-        # Validate the input to protect against SQL injection
-        question = re.sub(r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))", "", question)
-        question = re.sub(r";|`|'|\"", "", question)
-
-        # Log the user's question to the log file
-        logging.info(f"{message.author.name}: {question}")
-        
-        if user_id not in rate_limit_dict:
-            rate_limit_dict[user_id] = time.time()
-        else:
-            time_since_last_question = time
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
@@ -88,22 +60,9 @@ async def on_message(message):
     if message.content.startswith("!chat"):
         question = message.content[5:].strip()
 
-        # Remove all non-alphanumeric characters and white space
-        question = re.sub(r'[^\w\s]', '', question)
+        # Escape HTML characters
+        question = html.escape(question)
 
-        # Check for bad words
-        for word in bad_words:
-            if word in question:
-                await message.channel.send(f"{message.author.mention}, your question contains inappropriate language and cannot be answered.")
-                return
-
-        # Validate the input to protect against SQL injection
-        question = re.sub(r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))", "", question)
-        question = re.sub(r";|`|'|\"", "", question)
-
-        # Log the user's question to the log file
-        logging.info(f"{message.author.name}: {question}")
-        
         if user_id not in rate_limit_dict:
             rate_limit_dict[user_id] = time.time()
         else:
@@ -112,38 +71,120 @@ async def on_message(message):
                 await message.channel.send(f"{message.author.mention}, you are asking too fast! Please slow down.")
                 return
 
-        try:
-            response = openai.Completion.create(
-                engine="text-davinci-003",
-                prompt=question,
-                max_tokens=1024,
-                n=1,
-                stop=None,
-                temperature=0.3,
-            ).choices[0].text
-        except openai.OpenAIError as e:
-            logging.error(f"Error answering question: {e}")
+        response = await generate_response(question)
+        if response is None:
             return
 
         await send_message(message.channel, response, message)
 
+    elif message.content.startswith("!image"):
+        prompt = message.content[6:].strip()
+
+        # Escape HTML characters
+        prompt = html.escape(prompt)
+
+        image_url = await generate_image(prompt)
+
+        if image_url == "safety_system_error":
+            await message.channel.send(f"{message.author.mention}, your request was rejected as a result of our safety system. Your prompt may contain text that is not allowed by our safety system.")
+        elif image_url is not None:
+            # Download the image to a temporary file
+            with requests.get(image_url, stream=True) as r:
+                r.raise_for_status()
+                with open("temp_image.jpg", "wb") as f:
+                    for chunk in r.iter_content(chunk_size=8192):
+                        f.write(chunk)
+
+            # Upload the image to Discord
+            with open("temp_image.jpg", "rb") as f:
+                await message.channel.send(f"{message.author.mention}, here's the generated image:", file=discord.File(f))
+
+            # Remove the temporary file
+            os.remove("temp_image.jpg")
+
+async def generate_response(question):
+    try:
+        prompt = (
+            "You are a helpful assistant. User: "
+            + question
+            + "\nAssistant:"
+        )
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {openai.api_key}",
+        }
+
+        data = json.dumps({
+            "model": "gpt-3.5-turbo",
+            "messages": [{"role": "system", "content": "You are a helpful assistant."},
+                         {"role": "user", "content": question}],
+            "max_tokens": 1024,
+            "n": 1,
+            "stop": None,
+            "temperature": 0.3,
+        })
+
+        response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, data=data)
+        response_json = response.json()
+        if "choices" in response_json:
+            response_text = response_json["choices"][0]["message"]["content"]
+        else:
+            logging.error(f"Error in API response: {response_json}")
+            return None
+
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error answering question: {e}")
+        return None
+    return response_text.strip()
+
+async def generate_image(prompt):
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {openai.api_key}",
+        }
+
+        data = {
+            "prompt": prompt,
+            "n": 2,
+            "size": "256x256",
+        }
+
+        response = requests.post(
+            "https://api.openai.com/v1/images/generations",
+            headers=headers,
+            json=data,
+        )
+
+        response_json = response.json()
+        if "data" in response_json:
+            image_url = response_json["data"][0]["url"]
+        elif "error" in response_json:
+            error_message = response_json["error"]["message"]
+            if "safety system" in error_message:
+                return "safety_system_error"
+            else:
+                print(f"Error in API response: {response_json}")
+                image_url = None
+        else:
+            print(f"Error in API response: {response_json}")
+            image_url = None
+    except Exception as e:
+        print(f"Error generating image: {e}")
+        image_url = None
+
+    return image_url
 
 async def handle_question_queue():
     while True:
         if question_queue:
-            channel, question, message = question_queue.pop(0)
-            try:
-                response = openai.Completion.create(
-                    engine="text-davinci-003",
-                    prompt=question,
-                    max_tokens=1024,
-                    n=1,
-                    stop=None,
-                    temperature=0.3,
-                ).choices[0].text
-            except openai.OpenAIError as e:
-                logging.error(f"Error answering question: {e}")
+            channel, message, question = question_queue.pop(0)
+
+            response = await generate_response(question)
+            if response is None:
                 continue
+
             try:
                 await send_message(channel, response, message)
             except discord.errors.Forbidden as e:
