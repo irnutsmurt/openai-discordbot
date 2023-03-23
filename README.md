@@ -58,13 +58,16 @@ python3 aidiscordbot.py
 To communicate with the bot, a user will type
 
 ```
-/chat
+!chat
+or
+!image
 ```
 
-Followed by their question. This is an example of what it will look like.
+Followed by their question or image they want to generate. This is an example of what it will look like.
 
 ```
-/chat tell me the weather of the bermuda triangle
+!chat tell me the weather of the bermuda triangle
+!image staind glass window. Dog in a fighter jet. Sun in the bottom left corner. Lens flare shining.
 ```
 
 ## Creating a service account ##
