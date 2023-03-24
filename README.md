@@ -102,7 +102,7 @@ chown aidiscordbot:aidiscordbot /path/to/config.ini
 ```
 
 ## Creating a Daemon Service ##
-If you'd like to run the program in the background I suggest creating a systemd service. Alternativel the screen command can also be used
+If you'd like to run the program in the background I suggest creating a systemd service. Alternatively, the screen command can also be used but will not resume upon reset of the server.
 
 1. Create the systemd service file: 
 
