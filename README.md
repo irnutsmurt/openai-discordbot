@@ -47,9 +47,15 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 
 *Read Message History*
 
-17. Copy the Generated URL, and paste into the URL bar of the browser and authorize the bot.
+18. Copy the Generated URL, and paste into the URL bar of the browser and authorize the bot.
 
-18. Start the bot. In Linux under Ubuntu 20.04 that this was tested on that should be
+19. run the commandreg.js to register the commands to discord
+
+```
+node commandreg.js
+```
+
+20. Start the bot. In Linux under Ubuntu 20.04 that this was tested on that should be
 
 ```
 node main.js
