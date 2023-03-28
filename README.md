@@ -81,7 +81,8 @@ chown aidiscordbot:aidiscordbot /path/to/config.ini
 ```
 
 ## Creating a Daemon Service ##
-	@@ -107,32 +107,36 @@ If you'd like to run the program in the background I suggest creating a systemd
+If you'd like to run the program in the background I suggest creating a systemd
+
 1. Create the systemd service file: 
 
 ```
