@@ -1,4 +1,4 @@
-# openai-discordbot #
+# openai/dalle-discordbot #
 
 Moved over to node.js to increase functionality. This script is much easier to use, but node.js is much more feature packed. You want to move to that, check out the link https://github.com/irnutsmurt/discord.js-v14-openai-dalle
 
