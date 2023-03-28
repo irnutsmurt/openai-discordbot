@@ -1,6 +1,5 @@
-
 # openai-discordbot #
-simple python3 script to create a discord bot for openai. Using davinci 3 uses the gpt3 but not gpt3 turbo. Will be eventually updating script to use gpt 3.5 turbo since it uses less money.
+simple python3 script to create a discord bot for openai. Using gpt3 turbo. Will be eventually updating script to use gpt 4 once available
 
 This script was written entirely using ChatGPT. I understand the basics of how this work, but if you're more advanced in Python then you will be able to do a lot more than I can. If you have issues, paste the contents of the script into chatgpt, and ask it for help. It will be able to provide you a lot of info.
 
@@ -19,7 +18,9 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 
 7. Create a discord api token by going to https://discord.com/developers/applications/
 
-	@@ -25,7 +25,7 @@ This script was written entirely using ChatGPT. I understand the basics of how t
+8. Select "New Application" and give it a name and save
+
+9. Select Bot from the left hand panel
 
 10. Press the "Add Bot" button, and press the "Yes, do it" button
 
@@ -27,7 +28,26 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 
 12. Select the intents you need, generally it should only be SERVER MEMBERS INTENT, and MESSAGE CONTENT INTENT,
 
-	@@ -52,53 +52,53 @@ This script was written entirely using ChatGPT. I understand the basics of how t
+13. Save Changes
+
+14. From the left hand side, under OAuth2, select URL Generator
+
+15. Select the Scopes. Will only need BOT
+
+16. Select the Text Permissions that are required. These should be only
+
+*Send Messages*
+
+*Send Messages in Threads*
+
+*Embed Links*
+
+*Attach Files*
+
+*Read Message History*
+
+17. Copy the Generated URL, and paste into the URL bar of the browser and authorize the bot.
+
 18. Start the bot. In Linux under Ubuntu 20.04 that this was tested on that should be
 
 ```
@@ -81,7 +101,7 @@ chown aidiscordbot:aidiscordbot /path/to/config.ini
 ```
 
 ## Creating a Daemon Service ##
-If you'd like to run the program in the background I suggest creating a systemd
+If you'd like to run the program in the background I suggest creating a systemd service. Alternatively, the screen command can also be used but will not resume upon reset of the server.
 
 1. Create the systemd service file: 
 
@@ -94,31 +114,38 @@ sudo nano /etc/systemd/system/aidiscordbot.service
 
 ```    [Unit]
     Description=Aidiscordbot Service
-
     [Service]
     User=aidiscordbot
     Group=aidiscordbot
     ExecStart=/usr/bin/python3 /path/to/aidiscordbot.py
     Restart=always
-
     [Install]
     WantedBy=multi-user.target) 
 ```
 Note: Replace /path/to/aidiscordbot.py with the actual path to the aidiscordbot.py script on your system.
+
 3. Make sure the aidiscordbot.py script has the correct permissions:
+
 ```
     sudo chown aidiscordbot:aidiscordbot /path/to/aidiscordbot.py
-
+    
     sudo chmod 700 /path/to/aidiscordbot.py 
 ```
+
 4. Reload the systemd configuration:
-	@@ -143,12 +147,12 @@ sudo systemctl daemon-reload
+
+```
+sudo systemctl daemon-reload
+```
+
 5. Start the service:
 ```
 sudo systemctl start aidiscordbot.service
 ```
+
 6. Enable the service to start automatically at boot:
 ```
 sudo systemctl enable aidiscordbot.service
 ```
+
 With these steps, the aidiscordbot.py script should now run as the aidiscordbot user, with the least privilege necessary to execute the script, and will start automatically at boot.
