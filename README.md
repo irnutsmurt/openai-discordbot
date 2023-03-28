@@ -1,4 +1,7 @@
 # openai-discordbot #
+
+Moved over to node.js to increase functionality. This script is much easier to use, but node.js is much more feature packed. You want to move to that, check out the link https://github.com/irnutsmurt/discord.js-v14-openai-dalle
+
 simple python3 script to create a discord bot for openai. Using gpt3 turbo. Will be eventually updating script to use gpt 4 once available
 
 This script was written entirely using ChatGPT. I understand the basics of how this work, but if you're more advanced in Python then you will be able to do a lot more than I can. If you have issues, paste the contents of the script into chatgpt, and ask it for help. It will be able to provide you a lot of info.
