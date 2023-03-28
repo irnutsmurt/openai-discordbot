@@ -1,13 +1,13 @@
 
 # openai-discordbot #
-simple python3 script to create a discord bot for openai. Using davinci 3 uses the gpt3 but not gpt3 turbo. Will be eventually updating script to use gpt 3.5 turbo since it uses less money.
+simple node.js script to create a discord bot for openai. Using gpt-3.5-turbo. Will be eventually updating script to use gpt 4 once its available
 
-This script was written entirely using ChatGPT. I understand the basics of how this work, but if you're more advanced in Python then you will be able to do a lot more than I can. If you have issues, paste the contents of the script into chatgpt, and ask it for help. It will be able to provide you a lot of info.
+This script was written entirely using ChatGPT. I understand the basics of how this work, but if you're more advanced in node.js then you will be able to do a lot more than I can. If you have issues, paste the contents of the script into chatgpt, and ask it for help. It will be able to provide you a lot of info.
 
 ## To install ##
 1. git clone the repository
 
-2. pip install -r requirements.txt
+2. npm install
 
 3. Create an openai account at https://openai.com/api/
 
@@ -15,7 +15,7 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 
 5. Select "Create New Api Key" and copy it
 
-6. Paste the key into the config.ini file where it says "YOUR_OPENAI_API_KEY_HERE"
+6. Paste the key into the config.json file where it says "openai token"
 
 7. Create a discord api token by going to https://discord.com/developers/applications/
 
@@ -25,7 +25,7 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 
 10. Press the "Add Bot" button, and press the "Yes, do it" button
 
-11. Copy the token, and paste into the config.ini file where it says "OUR_DISCORD_TOKEN_HERE"
+11. Copy the token, and paste into the config.json file where it says "discord token" then copy the client id and paste where it says "your app id". Note client ID and app ID are the same thing. Discord just gives it 2 different names for some weird inconsistent reason
 
 12. Select the intents you need, generally it should only be SERVER MEMBERS INTENT, and MESSAGE CONTENT INTENT,
 
@@ -52,53 +52,53 @@ This script was written entirely using ChatGPT. I understand the basics of how t
 18. Start the bot. In Linux under Ubuntu 20.04 that this was tested on that should be
 
 ```
-python3 aidiscordbot.py
+node main.js
 ```
 
 To communicate with the bot, a user will type
 
 ```
-!chat
+/chat
 or
-!image
+/dalle
 ```
 
 Followed by their question or image they want to generate. This is an example of what it will look like.
 
 ```
-!chat tell me the weather of the bermuda triangle
-!image staind glass window. Dog in a fighter jet. Sun in the bottom left corner. Lens flare shining.
+/chat tell me the weather of the bermuda triangle
+/dalle staind glass window. Dog in a fighter jet. Sun in the bottom left corner. Lens flare shining.
 ```
 
 ## Creating a service account ##
 1. Create a new user:
 ```
-sudo useradd -r aidiscordbot
+sudo useradd -r discordbot
 ```
 
-2. Set where you want the user's home directory to be, this could be where the script is stored. Note, the directory must exist already: 
+2. Set where you want the user's home directory to be, this could be where the script is stored. I suggest /opt/nodejsdiscord as that is what I used. Note, the directory must exist already: 
 
 ```
-sudo usermod -d /var/empty aidiscordbot
+sudo usermod -d /var/empty discordbot
 ```
 
 3. Set the user's shell to /sbin/nologin: 
 
 ```
-sudo usermod -s /sbin/nologin aidiscordbot
+sudo usermod -s /sbin/nologin discordbot
 ```
 
-## Securing the Config.ini File ##
-1. Place the config.ini in the same directory as the python script
+## Securing the Config.json File ##
+1. Place the config.json in the same directory as the node.js script
 
 2. Change the readwrite permission to read only from the owner
 ```
-chmod 600 /path/to/config.ini
+chmod 600 /path/to/config.json
 ```
 
 3. Change the owner to whomever will be running the script. 
 ```
-chown aidiscordbot:aidiscordbot /path/to/config.ini
+chown discordbot:discordbot /path/to/config.json
 ```
 
 ## Creating a Daemon Service ##
@@ -107,32 +107,36 @@ If you'd like to run the program in the background I suggest creating a systemd 
 1. Create the systemd service file: 
 
 ```
-sudo nano /etc/systemd/system/aidiscordbot.service
+sudo nano /etc/systemd/system/jsdiscordbot.service
 ```
 
 2. Add the following content to the service file:
 
 
-```    [Unit]
-    Description=Aidiscordbot Service
+[Unit]
+Description=Discord Bot Service
+After=network.target
 
-    [Service]
-    User=aidiscordbot
-    Group=aidiscordbot
-    ExecStart=/usr/bin/python3 /path/to/aidiscordbot.py
-    Restart=always
+[Service]
+Type=simple
+User=discordbot
+WorkingDirectory=/opt/nodejsdiscord
+ExecStart=/usr/bin/node /opt/nodejsdiscord/main.js
+Restart=on-failure
+RestartSec=5
 
-    [Install]
-    WantedBy=multi-user.target) 
+[Install]
+WantedBy=multi-user.target
+
 ```
-Note: Replace /path/to/aidiscordbot.py with the actual path to the aidiscordbot.py script on your system.
+Note: Replace /path/to/main.js with the actual path to the main.js script on your system.
 
-3. Make sure the aidiscordbot.py script has the correct permissions:
+3. Make sure the main.js script has the correct permissions:
 
 ```
-    sudo chown aidiscordbot:aidiscordbot /path/to/aidiscordbot.py
+    sudo chown discordbot:discordbot /path/to/main.js
     
-    sudo chmod 700 /path/to/aidiscordbot.py 
+    sudo chmod 700 /path/to/main.js
 ```
 
 4. Reload the systemd configuration:
@@ -143,12 +147,12 @@ sudo systemctl daemon-reload
 
 5. Start the service:
 ```
-sudo systemctl start aidiscordbot.service
+sudo systemctl start jsdiscordbot.service
 ```
 
 6. Enable the service to start automatically at boot:
 ```
-sudo systemctl enable aidiscordbot.service
+sudo systemctl enable jsdiscordbot.service
 ```
 
-With these steps, the aidiscordbot.py script should now run as the aidiscordbot user, with the least privilege necessary to execute the script, and will start automatically at boot.
+With these steps, the main.js script should now run as the discordbot user, with the least privilege necessary to execute the script, and will start automatically at boot.
